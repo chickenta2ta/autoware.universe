@@ -86,9 +86,6 @@ struct GoalPlannerParameters
   double pull_over_max_steer_angle;
   // freespace parking
   bool enable_freespace_parking;
-  // hazard
-  double hazard_on_threshold_distance;
-  double hazard_on_threshold_velocity;
   // check safety with dynamic objects. Not used now.
   double pull_over_duration;
   double pull_over_prepare_duration;

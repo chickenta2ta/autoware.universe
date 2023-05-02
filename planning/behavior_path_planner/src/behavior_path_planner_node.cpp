@@ -821,12 +821,7 @@ GoalPlannerParameters BehaviorPathPlannerNode::getGoalPlannerParam()
       declare_parameter<double>(ns + "pull_over_max_steer_angle");  // 20deg
                                                                     // freespace parking
     p.enable_freespace_parking = declare_parameter<bool>(ns + "enable_freespace_parking");
-    // hazard
-    p.hazard_on_threshold_distance = declare_parameter<double>(ns + "hazard_on_threshold_distance");
-    p.hazard_on_threshold_velocity = declare_parameter<double>(ns + "hazard_on_threshold_velocity");
-    // safety with dynamic objects. Not used now.
-    p.pull_over_duration = declare_parameter<double>(ns + "pull_over_duration");
-    p.pull_over_prepare_duration = declare_parameter<double>(ns + "pull_over_prepare_duration");
+
     p.min_stop_distance = declare_parameter<double>(ns + "min_stop_distance");
     p.stop_time = declare_parameter<double>(ns + "stop_time");
     p.hysteresis_buffer_distance = declare_parameter<double>(ns + "hysteresis_buffer_distance");
