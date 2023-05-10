@@ -129,6 +129,14 @@ BehaviorModuleOutput PlannerManager::run(const std::shared_ptr<PlannerData> & da
 void PlannerManager::generateCombinedDrivableArea(
   BehaviorModuleOutput & output, const std::shared_ptr<PlannerData> & data) const
 {
+  if (output.path->points.empty()) {
+    return;
+  }
+
+  if (output.drivable_area_info.drivable_lanes.empty()) {
+    return;
+  }
+
   constexpr double epsilon = 1e-3;
   if (epsilon < std::abs(output.drivable_area_info.drivable_margin)) {
     // for single free space pull over
@@ -316,12 +324,20 @@ std::pair<SceneModulePtr, BehaviorModuleOutput> PlannerManager::runRequestModule
   auto sorted_request_modules = request_modules;
   sortByPriority(sorted_request_modules);
 
+  // print sorted_request_modules
+  std::cerr << "sorted_request_modules: ";
+  for (const auto & m : sorted_request_modules) {
+    std::cerr << "[" << m->name() << "]->";
+  }
+  std::cerr << std::endl;
+
   /**
    * remove non-executable modules.
    */
   for (const auto & module_ptr : sorted_request_modules) {
     if (!getManager(module_ptr)->isSimultaneousExecutableAsCandidateModule()) {
       if (executable_modules.empty()) {
+        std::cerr << "push back executable module: " << module_ptr->name() << std::endl;
         executable_modules.push_back(module_ptr);
         break;
       }
@@ -333,9 +349,17 @@ std::pair<SceneModulePtr, BehaviorModuleOutput> PlannerManager::runRequestModule
       });
 
     if (itr == executable_modules.end()) {
+      std::cerr << "push back executable module2: " << module_ptr->name() << std::endl;
       executable_modules.push_back(module_ptr);
     }
   }
+
+  // print executable_modules
+  std::cerr << "executable_modules: ";
+  for (const auto & m : executable_modules) {
+    std::cerr << "[" << m->name() << "]->";
+  }
+  std::cerr << std::endl;
 
   /**
    * run executable modules.
@@ -357,11 +381,13 @@ std::pair<SceneModulePtr, BehaviorModuleOutput> PlannerManager::runRequestModule
     const auto remove_expired_modules = [this](auto & m) {
       if (m->getCurrentStatus() == ModuleStatus::FAILURE) {
         deleteExpiredModules(m);
+        std::cerr << "remove failure expired module: " << m->name() << std::endl;
         return true;
       }
 
       if (m->getCurrentStatus() == ModuleStatus::SUCCESS) {
         deleteExpiredModules(m);
+        std::cerr << "remove success expired module: " << m->name() << std::endl;
         return true;
       }
 
@@ -386,8 +412,10 @@ std::pair<SceneModulePtr, BehaviorModuleOutput> PlannerManager::runRequestModule
    */
   std::for_each(executable_modules.begin(), executable_modules.end(), [&](const auto & m) {
     if (m->isWaitingApproval()) {
+      std::cerr << "push back waiting approve module: " << m->name() << std::endl;
       waiting_approved_modules.push_back(m);
     } else {
+      std::cerr << "push back already approved module: " << m->name() << std::endl;
       already_approved_modules.push_back(m);
     }
   });
@@ -397,10 +425,14 @@ std::pair<SceneModulePtr, BehaviorModuleOutput> PlannerManager::runRequestModule
    */
   const auto module_ptr = [&]() {
     if (!already_approved_modules.empty()) {
+      std::cerr << "select already approved module: " << already_approved_modules.front()->name()
+                << std::endl;
       return selectHighestPriorityModule(already_approved_modules);
     }
 
     if (!waiting_approved_modules.empty()) {
+      std::cerr << "select waiting approve module: " << waiting_approved_modules.front()->name()
+                << std::endl;
       return selectHighestPriorityModule(waiting_approved_modules);
     }
 
@@ -449,6 +481,8 @@ BehaviorModuleOutput PlannerManager::runApprovedModules(const std::shared_ptr<Pl
 
       std::for_each(
         std::next(itr), approved_module_ptrs_.end(), [this](auto & m) { deleteExpiredModules(m); });
+
+      std::cerr << "pop waiting approve module: " << itr->get()->name() << std::endl;
     }
 
     approved_module_ptrs_.erase(itr, approved_module_ptrs_.end());
@@ -466,6 +500,7 @@ BehaviorModuleOutput PlannerManager::runApprovedModules(const std::shared_ptr<Pl
 
     if (itr != approved_module_ptrs_.end()) {
       clearCandidateModules();
+      std::cerr << "remove failure modules: " << itr->get()->name() << std::endl;
     }
 
     approved_module_ptrs_.erase(itr, approved_module_ptrs_.end());
@@ -512,7 +547,7 @@ BehaviorModuleOutput PlannerManager::runApprovedModules(const std::shared_ptr<Pl
   if (lane_change_itr == approved_module_ptrs_.end()) {
     std::for_each(
       success_itr, approved_module_ptrs_.end(), [this](auto & m) { deleteExpiredModules(m); });
-
+    std::cerr << "remove success modules: " << success_itr->get()->name() << std::endl;
     approved_module_ptrs_.erase(success_itr, approved_module_ptrs_.end());
     clearCandidateModules();
 
@@ -528,7 +563,8 @@ BehaviorModuleOutput PlannerManager::runApprovedModules(const std::shared_ptr<Pl
   if (not_success_itr == approved_module_ptrs_.rend()) {
     std::for_each(
       success_itr, approved_module_ptrs_.end(), [this](auto & m) { deleteExpiredModules(m); });
-
+    std::cerr << "remove success modules as an exception: " << success_itr->get()->name()
+              << std::endl;
     approved_module_ptrs_.erase(success_itr, approved_module_ptrs_.end());
     clearCandidateModules();
 

@@ -26,10 +26,17 @@ RTCAutoModeManagerNode::RTCAutoModeManagerNode(const rclcpp::NodeOptions & node_
     declare_parameter<std::vector<std::string>>("module_list");
   const std::vector<std::string> default_enable_list =
     declare_parameter<std::vector<std::string>>("default_enable_list");
+  std::cerr << "hoge module_list" << std::endl;
+for (const auto & module_name : module_list) {
+  std::cerr << " [ " << module_name << " ] ";
+}
+std::cerr << std::endl;
 
   for (const auto & module_name : module_list) {
+    
     const bool enabled =
       std::count(default_enable_list.begin(), default_enable_list.end(), module_name) != 0;
+    std::cerr << module_name << ": " << enabled<<std::endl;
     managers_.push_back(std::make_shared<RTCAutoModeManagerInterface>(this, module_name, enabled));
   }
   statuses_pub_ = create_publisher<AutoModeStatusArray>("output/auto_mode_statuses", 1);

@@ -96,6 +96,7 @@ RTCInterface::RTCInterface(rclcpp::Node * node, const std::string & name)
     cooperate_commands_namespace_ + "/" + name,
     std::bind(&RTCInterface::onCooperateCommandService, this, _1, _2),
     rmw_qos_profile_services_default, callback_group_);
+  std::cerr << "hoge rtc interface: " << name << std::endl;
   srv_auto_mode_ = node->create_service<AutoMode>(
     enable_auto_mode_namespace_ + "/" + name,
     std::bind(&RTCInterface::onAutoModeService, this, _1, _2), rmw_qos_profile_services_default,

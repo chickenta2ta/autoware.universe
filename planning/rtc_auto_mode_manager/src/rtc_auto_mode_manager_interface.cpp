@@ -71,6 +71,7 @@ RTCAutoModeManagerInterface::RTCAutoModeManagerInterface(
   using std::placeholders::_2;
 
   // Service client
+  std::cerr << "hoge rtc auto mode manager interface: " << module_name << std::endl;
   enable_cli_ = node->create_client<AutoMode>(
     enable_auto_mode_namespace_ + "/internal/" + module_name, rmw_qos_profile_services_default);
 
