@@ -109,6 +109,9 @@ public:
   lanelet::ConstLanelets getLaneletsFromPoint(const lanelet::ConstPoint3d & point) const;
   lanelet::ConstLanelets getLaneChangeableNeighbors(const lanelet::ConstLanelet & lanelet) const;
 
+  bool getRightLaneletOfShoulder(
+    const lanelet::ConstLanelet & shoulder_lanelet, lanelet::ConstLanelet * right_lanelet) const;
+
   /**
    * @brief Check if same-direction lane is available at the right side of the lanelet
    * Searches for any lanes regardless of whether it is lane-changeable or not.

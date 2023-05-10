@@ -910,9 +910,28 @@ bool RouteHandler::isBijectiveConnection(
   return true;
 }
 
+bool RouteHandler::getRightLaneletOfShoulder(
+  const lanelet::ConstLanelet & shoulder_lanelet, lanelet::ConstLanelet * right_lanelet) const
+{
+  for (const auto & lanelet : road_lanelets_) {
+    if (lanelet::geometry::rightOf(lanelet, shoulder_lanelet)) {
+      *right_lanelet = lanelet;
+      return true;
+    }
+  }
+  return false;
+}
+
 boost::optional<lanelet::ConstLanelet> RouteHandler::getRightLanelet(
   const lanelet::ConstLanelet & lanelet) const
 {
+  if (isShoulderLanelet(lanelet)) {
+    lanelet::ConstLanelet right_lane;
+    if (getRightLaneletOfShoulder(lanelet, &right_lane)) {
+      return right_lane;
+    }
+  }
+
   // routable lane
   const auto & right_lane = routing_graph_ptr_->right(lanelet);
   if (right_lane) {

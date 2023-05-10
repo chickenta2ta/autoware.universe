@@ -547,7 +547,7 @@ BehaviorModuleOutput PlannerManager::runApprovedModules(const std::shared_ptr<Pl
   if (lane_change_itr == approved_module_ptrs_.end()) {
     std::for_each(
       success_itr, approved_module_ptrs_.end(), [this](auto & m) { deleteExpiredModules(m); });
-    std::cerr << "remove success modules: " << success_itr->get()->name() << std::endl;
+    // std::cerr << "remove success modules: " << success_itr->get()->name() << std::endl;
     approved_module_ptrs_.erase(success_itr, approved_module_ptrs_.end());
     clearCandidateModules();
 
