@@ -230,8 +230,7 @@ public:
   }
 
   /**
-   * @brief Return true if the activation command is received from the RTC interface.
-   *        If no RTC interface is registered, return true.
+   * @brief Return true if the activation command is received
    */
   bool isActivated()
   {
@@ -240,7 +239,7 @@ public:
         return itr->second->isActivated(uuid_map_.at(itr->first));
       }
     }
-    return true;
+    return false;
   }
 
   void publishSteeringFactor()
