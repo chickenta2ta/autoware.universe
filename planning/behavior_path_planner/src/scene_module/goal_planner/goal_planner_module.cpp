@@ -430,6 +430,7 @@ bool GoalPlannerModule::planFreespacePath()
   const auto goal_candidates = goal_candidates_;
   mutex_.unlock();
 
+  RCLCPP_INFO(getLogger(), "start planning freespace path");
   for (const auto & goal_candidate : goal_candidates) {
     if (!goal_candidate.is_safe) {
       continue;
@@ -445,10 +446,13 @@ bool GoalPlannerModule::planFreespacePath()
     status_.current_path_idx = 0;
     status_.is_safe = true;
     modified_goal_pose_ = goal_candidate;
+    std::cerr << "update modified_goal_pose_->id: " << modified_goal_pose_->id << std::endl;
     last_path_update_time_ = std::make_unique<rclcpp::Time>(clock_->now());
     mutex_.unlock();
+    RCLCPP_INFO(getLogger(), "success planning freespace path");
     return true;
   }
+  RCLCPP_INFO(getLogger(), "fail planning freespace path");
   return false;
 }
 
@@ -654,9 +658,11 @@ void GoalPlannerModule::setModifiedGoal(BehaviorModuleOutput & output) const
 {
   // set the modified goal only when it is updated
   const auto & route_handler = planner_data_->route_handler;
+
   const bool has_changed_goal =
     modified_goal_pose_ && (!prev_goal_id_ || *prev_goal_id_ != modified_goal_pose_->id);
-  if (status_.is_safe && has_changed_goal) {
+  const bool is_freespace_path = status_.pull_over_path->type == PullOverPlannerType::FREESPACE;
+  if ((status_.is_safe || is_freespace_path) && has_changed_goal) {
     PoseWithUuidStamped modified_goal{};
     modified_goal.uuid = route_handler->getRouteUuid();
     modified_goal.pose = modified_goal_pose_->goal_pose;
@@ -723,38 +729,20 @@ bool GoalPlannerModule::hasDecidedPath() const
   return dist_to_parking_start_pose < parameters_->decide_path_distance;
 }
 
-void GoalPlannerModule::requestApproval()
+void GoalPlannerModule::decideVelocity()
 {
-  const auto & current_pose = planner_data_->self_odometry->pose.pose;
   const double current_vel = planner_data_->self_odometry->twist.twist.linear.x;
 
-  if (!status_.has_requested_approval) {
-    // request approval again one the final path is decided
-    waitApproval();
-    removeRTCStatus();
-    steering_factor_interface_ptr_->clearSteeringFactors();
-    for (auto itr = uuid_map_.begin(); itr != uuid_map_.end(); ++itr) {
-      itr->second = generateUUID();
+  // decide velocity to guarantee turn signal lighting time
+  if (!status_.has_decided_velocity) {
+    auto & first_path = status_.pull_over_path->partial_paths.front();
+    const auto vel =
+      static_cast<float>(std::max(current_vel, parameters_->pull_over_minimum_velocity));
+    for (auto & p : first_path.points) {
+      p.point.longitudinal_velocity_mps = std::min(p.point.longitudinal_velocity_mps, vel);
     }
-    current_state_ = ModuleStatus::SUCCESS;  // for breaking loop to request again
-    status_.has_requested_approval = true;
-  } else if (isActivated() && isWaitingApproval()) {
-    // When it is approved again after path is decided
-    clearWaitingApproval();
-    last_approved_time_ = std::make_unique<rclcpp::Time>(clock_->now());
-    last_approved_pose_ = std::make_unique<Pose>(current_pose);
-
-    // decide velocity to guarantee turn signal lighting time
-    if (!status_.has_decided_velocity) {
-      auto & first_path = status_.pull_over_path->partial_paths.front();
-      const auto vel =
-        static_cast<float>(std::max(current_vel, parameters_->pull_over_minimum_velocity));
-      for (auto & p : first_path.points) {
-        p.point.longitudinal_velocity_mps = std::min(p.point.longitudinal_velocity_mps, vel);
-      }
-    }
-    status_.has_decided_velocity = true;
   }
+  status_.has_decided_velocity = true;
 }
 
 BehaviorModuleOutput GoalPlannerModule::planWithGoalModification()
@@ -772,7 +760,11 @@ BehaviorModuleOutput GoalPlannerModule::planWithGoalModification()
 
   // Use decided path
   if (status_.has_decided_path) {
-    requestApproval();
+    if (isActivated()) {
+      last_approved_time_ = std::make_unique<rclcpp::Time>(clock_->now());
+      last_approved_pose_ = std::make_unique<Pose>(planner_data_->self_odometry->pose.pose);
+      decideVelocity();
+    }
     transitionToNextPathIfFinishingCurrentPath();
   } else if (!pull_over_path_candidates_.empty() && needPathUpdate(path_update_duration)) {
     // if the final path is not decided and enough time has passed since last path update,
@@ -794,7 +786,9 @@ BehaviorModuleOutput GoalPlannerModule::planWithGoalModification()
   }
 
   const auto distance_to_path_change = calcDistanceToPathChange();
-  updateRTCStatus(distance_to_path_change.first, distance_to_path_change.second);
+  if (status_.has_decided_path) {
+    updateRTCStatus(distance_to_path_change.first, distance_to_path_change.second);
+  }
   // TODO(tkhmy) add handle status TRYING
   updateSteeringFactor(
     {status_.pull_over_path->start_pose, modified_goal_pose_->goal_pose},
@@ -839,11 +833,6 @@ BehaviorModuleOutput GoalPlannerModule::planWaitingApprovalWithGoalModification(
   path_reference_ = getPreviousModuleOutput().reference_path;
   const auto distance_to_path_change = calcDistanceToPathChange();
 
-  updateRTCStatus(distance_to_path_change.first, distance_to_path_change.second);
-  updateSteeringFactor(
-    {status_.pull_over_path->start_pose, modified_goal_pose_->goal_pose},
-    {distance_to_path_change.first, distance_to_path_change.second}, SteeringFactor::APPROACHING);
-
   // generate drivable area info for new architecture
   if (status_.pull_over_path->type == PullOverPlannerType::FREESPACE) {
     const double drivable_area_margin = planner_data_->parameters.vehicle_width;
@@ -857,6 +846,13 @@ BehaviorModuleOutput GoalPlannerModule::planWaitingApprovalWithGoalModification(
     out.drivable_area_info = utils::combineDrivableAreaInfo(
       current_drivable_area_info, getPreviousModuleOutput().drivable_area_info);
   }
+
+  if (status_.has_decided_path) {
+    updateRTCStatus(distance_to_path_change.first, distance_to_path_change.second);
+  }
+  updateSteeringFactor(
+    {status_.pull_over_path->start_pose, modified_goal_pose_->goal_pose},
+    {distance_to_path_change.first, distance_to_path_change.second}, SteeringFactor::APPROACHING);
 
   return out;
 }
