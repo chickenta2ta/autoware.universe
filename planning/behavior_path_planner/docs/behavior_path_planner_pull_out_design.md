@@ -95,7 +95,7 @@ Pull out distance is calculated by the speed, lateral deviation, and the lateral
 #### **geometric pull out**
 
 Generate two arc paths with discontinuous curvature. Ego-vehicle stops once in the middle of the path to control the steer on the spot.
-See also [[1]](https://www.sciencedirect.com/science/article/pii/S1474667015347431) for details of the algorithm.
+See also [[1]](<https://www.sciencedirect.com/science/article/pii/S1474667015347431>) for details of the algorithm.
 
 ![geometric_pull_out](../image/geometric_pull_out.drawio.svg)
 

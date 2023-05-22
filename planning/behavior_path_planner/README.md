@@ -185,7 +185,7 @@ This module depends on the external [BehaviorTreeCpp](https://github.com/Behavio
 
 <!-- cspell:ignore Vorobieva, Minoiu, Enache, Mammar, IFAC -->
 
-[[1]](https://www.sciencedirect.com/science/article/pii/S1474667015347431) H. Vorobieva, S. Glaser, N. Minoiu-Enache, and S. Mammar, “Geometric path planning for automatic parallel parking in tiny spots”, IFAC Proceedings Volumes, vol. 45, no. 24, pp. 36–42, 2012.
+[[1]](<https://www.sciencedirect.com/science/article/pii/S1474667015347431>) H. Vorobieva, S. Glaser, N. Minoiu-Enache, and S. Mammar, “Geometric path planning for automatic parallel parking in tiny spots”, IFAC Proceedings Volumes, vol. 45, no. 24, pp. 36–42, 2012.
 
 ## Future extensions / Unimplemented parts
 

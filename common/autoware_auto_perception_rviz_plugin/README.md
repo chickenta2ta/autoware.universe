@@ -4,7 +4,7 @@
 
 It is an rviz plugin for visualizing the result from perception module. This package is based on the implementation of the rviz plugin developed by Autoware.Auto.
 
-See Autoware.Auto design documentation for the original design philosophy. [[1]](https://gitlab.com/autowarefoundation/autoware.auto/AutowareAuto/-/blob/master/src/tools/visualization/autoware_rviz_plugins)
+See Autoware.Auto design documentation for the original design philosophy. [[1]](<https://gitlab.com/autowarefoundation/autoware.auto/AutowareAuto/-/blob/master/src/tools/visualization/autoware_rviz_plugins>)
 
 <!-- Write the purpose of this package and briefly describe the features.
 

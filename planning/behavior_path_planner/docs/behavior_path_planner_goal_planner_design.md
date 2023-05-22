@@ -207,7 +207,7 @@ The lateral jerk is searched for among the predetermined minimum and maximum val
 ### **geometric parallel parking**
 
 Generate two arc paths with discontinuous curvature. It stops twice in the middle of the path to control the steer on the spot. There are two path generation methods: forward and backward.
-See also [[1]](https://www.sciencedirect.com/science/article/pii/S1474667015347431) for details of the algorithm. There is also [a simple python implementation](https://github.com/kosuke55/geometric-parallel-parking).
+See also [[1]](<https://www.sciencedirect.com/science/article/pii/S1474667015347431>) for details of the algorithm. There is also [a simple python implementation](https://github.com/kosuke55/geometric-parallel-parking).
 
 #### Parameters geometric parallel parking
 
