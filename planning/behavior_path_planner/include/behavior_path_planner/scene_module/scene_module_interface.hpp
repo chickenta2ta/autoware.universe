@@ -66,7 +66,7 @@ public:
   : name_{name},
     logger_{node.get_logger().get_child(name)},
     clock_{node.get_clock()},
-    is_waiting_approval_{false},
+    is_waiting_approval_{true},
     is_locked_new_module_launch_{false},
 #ifdef USE_OLD_ARCHITECTURE
     current_state_{ModuleStatus::SUCCESS},
