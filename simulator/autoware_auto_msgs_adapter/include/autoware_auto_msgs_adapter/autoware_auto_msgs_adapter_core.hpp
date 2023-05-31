@@ -15,6 +15,61 @@
 #define AUTOWARE_AUTO_MSGS_ADAPTER__AUTOWARE_AUTO_MSGS_ADAPTER_CORE_HPP_
 
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp/type_adapter.hpp>
+
+#include <autoware_auto_control_msgs/msg/ackermann_control_command.hpp>
+#include <autoware_control_msgs/msg/control.hpp>
+
+/// custom_type: autoware_control_msgs::msg::Control
+/// ros_message_type: autoware_auto_control_msgs::msg::AckermannControlCommand
+template <>
+struct rclcpp::TypeAdapter<
+  autoware_control_msgs::msg::Control, autoware_auto_control_msgs::msg::AckermannControlCommand>
+{
+  using is_specialized = std::true_type;
+
+  /// \brief Convert from custom type to ROS message type. Will be used when subscribing to a
+  /// autoware_auto_control_msgs::msg::AckermannControlCommand topic.
+  static void convert_to_ros_message(
+    const autoware_control_msgs::msg::Control & source,
+    autoware_auto_control_msgs::msg::AckermannControlCommand & destination)
+  {
+    destination.stamp = source.stamp;
+
+    const auto & lateral_auto = source.lateral;
+    auto & lateral = destination.lateral;
+    lateral.stamp = lateral_auto.stamp;
+    lateral.steering_tire_angle = lateral_auto.steering_tire_angle;
+    lateral.steering_tire_rotation_rate = lateral_auto.steering_tire_rotation_rate;
+
+    const auto & longitudinal_auto = source.longitudinal;
+    auto & longitudinal = destination.longitudinal;
+    longitudinal.stamp = longitudinal_auto.stamp;
+    longitudinal.acceleration = longitudinal_auto.acceleration;
+    longitudinal.jerk = longitudinal_auto.jerk;
+    longitudinal.speed = longitudinal_auto.velocity;
+  }
+
+  static void convert_to_custom(
+    const autoware_auto_control_msgs::msg::AckermannControlCommand & source,
+    autoware_control_msgs::msg::Control & destination)
+  {
+    destination.stamp = source.stamp;
+
+    const auto & lateral = source.lateral;
+    auto & lateral_auto = destination.lateral;
+    lateral_auto.stamp = lateral.stamp;
+    lateral_auto.steering_tire_angle = lateral.steering_tire_angle;
+    lateral_auto.steering_tire_rotation_rate = lateral.steering_tire_rotation_rate;
+
+    const auto & longitudinal = source.longitudinal;
+    auto & longitudinal_auto = destination.longitudinal;
+    longitudinal_auto.stamp = longitudinal.stamp;
+    longitudinal_auto.acceleration = longitudinal.acceleration;
+    longitudinal_auto.jerk = longitudinal.jerk;
+    longitudinal_auto.velocity = longitudinal.speed;
+  }
+};
 
 namespace autoware_auto_msgs_adapter
 {
@@ -22,6 +77,8 @@ class AutowareAutoMsgsAdapterNode : public rclcpp::Node
 {
 public:
   explicit AutowareAutoMsgsAdapterNode(const rclcpp::NodeOptions & node_options);
+
+private:
 };
 }  // namespace autoware_auto_msgs_adapter
 
